@@ -17,21 +17,8 @@ str(act)
 ```
 
 ```r
-
+# cast the date variable into the Date class
 act$date <- as.Date(act$date, format = "%Y-%m-%d")
-
-summary(act)
-```
-
-```
-##      steps            date               interval   
-##  Min.   :  0.0   Min.   :2012-10-01   Min.   :   0  
-##  1st Qu.:  0.0   1st Qu.:2012-10-16   1st Qu.: 589  
-##  Median :  0.0   Median :2012-10-31   Median :1178  
-##  Mean   : 37.4   Mean   :2012-10-31   Mean   :1178  
-##  3rd Qu.: 12.0   3rd Qu.:2012-11-15   3rd Qu.:1766  
-##  Max.   :806.0   Max.   :2012-11-30   Max.   :2355  
-##  NA's   :2304
 ```
 
 
@@ -39,54 +26,40 @@ summary(act)
 ## What is mean total number of steps taken per day?
 
 For this part of the assignment, ignore the missing values in the dataset.  
-1. Make a histogram of the total number of steps taken each day.  
-1. Calculate and report the mean and median total number of steps taken per day.  
+  
+- Make a histogram of the total number of steps taken each day.  
+  
 
 ```r
-
 # sum steps at the daily level
 steps.daily <- aggregate(steps ~ date, data = act, sum)
 
 # check that the total steps in the per-day data equals the total steps in
 # the original data
 if (sum(steps.daily$steps) == sum(act$steps, na.rm = T)) {
-    message("Sum of steps is OK")
+    message("Sum of steps in rolled up data matches original")
 } else message("Error: Sum of steps has changed")
 ```
 
 ```
-## Sum of steps is OK
+## Sum of steps in rolled up data matches original
 ```
 
 ```r
 
-head(steps.daily, n = 10)
-```
-
-```
-##          date steps
-## 1  2012-10-02   126
-## 2  2012-10-03 11352
-## 3  2012-10-04 12116
-## 4  2012-10-05 13294
-## 5  2012-10-06 15420
-## 6  2012-10-07 11015
-## 7  2012-10-09 12811
-## 8  2012-10-10  9900
-## 9  2012-10-11 10304
-## 10 2012-10-12 17382
-```
-
-```r
-
+# Plot a histogram showing the distribution of steps per day
 with(steps.daily, hist(steps, main = "Steps per Day Distribution", xlab = "steps per day", 
     ylab = "number of days", breaks = 11, col = "wheat"))
 ```
 
 ![plot of chunk steps per day](figure/steps_per_day.png) 
 
-```r
 
+  
+- Calculate and report the mean and median total number of steps taken per day.
+
+```r
+# calculate central tendencies for the steps per day distribution
 mean.steps.per.day <- mean(steps.daily$steps)
 median.steps.per.day <- median(steps.daily$steps)
 
@@ -107,7 +80,6 @@ cat("Median number of steps per day = ", median.steps.per.day)
 
 
 
-
 ## What is the average daily activity pattern?
 
 1. Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
@@ -120,10 +92,12 @@ cat("Median number of steps per day = ", median.steps.per.day)
 - See the reference plot on the PA1 instructions.
 
 ```r
-
+# roll up the data to the 5-minute interval level, averaging steps across
+# days
 steps.5min <- aggregate(steps ~ interval, data = act, FUN = mean)
 
-with(steps.5min, plot(interval, steps, type = "l", main = "Average Steps Within a Typical 24 Hour Day", 
+# plot a time series plot of average steps during a typical day
+with(steps.5min, plot(interval, steps, type = "l", col = "blue", lwd = 2, main = "Average Steps Within a Typical 24 Hour Day", 
     xlab = "Hours into the Day (500 = 5:00am)", ylab = "Average Number of Steps"))
 ```
 
@@ -155,17 +129,18 @@ Devise a strategy for filling in all of the missing values in the dataset. The s
 Create a new dataset that is equal to the original dataset but with the missing data filled in.
 
 ```r
-
-# keep only non-missing rows
+# set aside rows without missing values
 nonmissrows <- act[complete.cases(act), ]
 
-# separate out missing rows, keeping only the date and interval columns
+# separate out rows WITH missing values, keeping only the date and interval
+# columns
 missingrows <- act[!(complete.cases(act)), -1]
 
-# impute missing steps
+# impute steps, replacing NA with the average number of steps for that
+# interval across days
 imputedrows <- merge(missingrows, steps.5min, by = "interval", all.x = TRUE)
 
-# put the imputed rows back with the non-missing rows
+# put rows with imputed steps back with the rest of the data
 act.imputed <- rbind.data.frame(nonmissrows, imputedrows)
 act.imputed <- act.imputed[order(act.imputed$date, act.imputed$interval), ]
 ```
@@ -176,42 +151,10 @@ act.imputed <- act.imputed[order(act.imputed$date, act.imputed$interval), ]
 Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
 
 ```r
-
 # sum steps at the daily level
 steps.daily <- aggregate(steps ~ date, data = act.imputed, sum)
 
-# check that the total steps in the per-day data equals the total steps in
-# the original data
-if (sum(steps.daily$steps) == sum(act.imputed$steps, na.rm = T)) {
-    message("Sum of steps is OK")
-} else message("Error: Sum of steps has changed")
-```
-
-```
-## Sum of steps is OK
-```
-
-```r
-
-head(steps.daily, n = 10)
-```
-
-```
-##          date steps
-## 1  2012-10-01 10766
-## 2  2012-10-02   126
-## 3  2012-10-03 11352
-## 4  2012-10-04 12116
-## 5  2012-10-05 13294
-## 6  2012-10-06 15420
-## 7  2012-10-07 11015
-## 8  2012-10-08 10766
-## 9  2012-10-09 12811
-## 10 2012-10-10  9900
-```
-
-```r
-
+# histogram
 with(steps.daily, hist(steps, main = "Steps per Day Distribution", xlab = "steps per day", 
     ylab = "number of days", breaks = 11, col = "wheat"))
 ```
@@ -219,7 +162,7 @@ with(steps.daily, hist(steps, main = "Steps per Day Distribution", xlab = "steps
 ![plot of chunk steps per day after imputation](figure/steps_per_day_after_imputation.png) 
 
 ```r
-
+# compute mean and median daily steps
 mean.steps.per.day <- mean(steps.daily$steps)
 median.steps.per.day <- median(steps.daily$steps)
 
@@ -238,8 +181,39 @@ cat("Median number of steps per day after imputation = ", median.steps.per.day)
 ## Median number of steps per day after imputation =  10766
 ```
 
-
+The mean and median steps per day are virtually unchanged after imputation.  However, the histogram is more peaked, though it retains a similar shape.  Therefore, a disproportionate number of imputed steps landed near the center of the distribution. 
 
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+For this part the weekdays() function may be of some help here. Use the dataset with the filled-in missing values for this part.
+
+- Create a new factor variable in the dataset with two levels - "weekday" and "weekend" indicating whether a given date is a weekday or weekend day.
+
+```r
+# create a Weekend, Weekday factor
+act.imputed$weekday <- ifelse(weekdays(act.imputed$date) %in% c("Saturday", 
+    "Sunday"), 0, 1)
+act.imputed$weekday <- factor(act.imputed$weekday, labels = c("Weekend", "Weekday"))
+```
+
+
+
+
+- Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). 
+
+```r
+# aggregate by interval across all dates
+act.imputed.5min <- aggregate(steps ~ weekday + interval, data = act.imputed, 
+    FUN = mean)
+
+# plot average steps per time interval, separating weekdays and weekends
+library("lattice")
+
+xyplot(steps ~ interval | weekday, data = act.imputed.5min, type = "l", xlab = "Interval", 
+    ylab = "Number of Steps", layout = c(1, 2))
+```
+
+![plot of chunk intra-day steps for weekdays and weekends](figure/intra-day_steps_for_weekdays_and_weekends.png) 
+
+

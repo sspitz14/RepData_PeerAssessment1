@@ -6,44 +6,43 @@
 ```{r read data, cache=TRUE}
 act <- read.csv("activity.csv", strip.white=T, stringsAsFactors=F)
 str(act)
-
+# cast the date variable into the Date class
 act$date <- as.Date(act$date, format="%Y-%m-%d")
-
-summary(act)
-
 ```
 
 
 ## What is mean total number of steps taken per day?
 
 For this part of the assignment, ignore the missing values in the dataset.  
-1. Make a histogram of the total number of steps taken each day.  
-1. Calculate and report the mean and median total number of steps taken per day.  
+  
+- Make a histogram of the total number of steps taken each day.  
+  
 ```{r steps per day}
-
 # sum steps at the daily level
 steps.daily <- aggregate(steps ~ date, data=act, sum)
 
 # check that the total steps in the per-day data 
 # equals the total steps in the original data
 if(sum(steps.daily$steps) == sum(act$steps, na.rm=T)) {
-    message("Sum of steps is OK")
+    message("Sum of steps in rolled up data matches original")
 }else message("Error: Sum of steps has changed")
 
-head(steps.daily, n=10)
-
+# Plot a histogram showing the distribution of steps per day
 with(steps.daily, hist(steps, main="Steps per Day Distribution", 
                        xlab="steps per day", ylab="number of days", 
                        breaks=11, col="wheat"))
+```
 
+  
+- Calculate and report the mean and median total number of steps taken per day.
+```{r}
+# calculate central tendencies for the steps per day distribution
 mean.steps.per.day <- mean(steps.daily$steps)
 median.steps.per.day <- median(steps.daily$steps)
 
 cat("Mean number of steps per day = ", mean.steps.per.day)
 cat("Median number of steps per day = ", median.steps.per.day)
-
 ```
-
 
 
 ## What is the average daily activity pattern?
@@ -57,10 +56,11 @@ cat("Median number of steps per day = ", median.steps.per.day)
 - Plot the data with the interval on the x-axis and the average steps of each interval on the y-axis.
 - See the reference plot on the PA1 instructions.
 ```{r 5 min time series}
-
+# roll up the data to the 5-minute interval level, averaging steps across days
 steps.5min <- aggregate(steps ~ interval, data=act, FUN=mean)
 
-with(steps.5min, plot(interval, steps, type="l", 
+# plot a time series plot of average steps during a typical day
+with(steps.5min, plot(interval, steps, type="l", col="blue", lwd=2,  
                       main="Average Steps Within a Typical 24 Hour Day",
                       xlab="Hours into the Day (500 = 5:00am)", 
                       ylab="Average Number of Steps"))
@@ -90,19 +90,19 @@ nonmissrows  <- act[complete.cases(act), ]
 # separate out rows WITH missing values, keeping only the date and interval columns
 missingrows <- act[!(complete.cases(act)), -1]
 
-# impute steps == NA using the average number of steps for that interval across days
+# impute steps, replacing NA with the average number of steps for that interval across days
 imputedrows <- merge(missingrows, steps.5min, by="interval", all.x=TRUE)
 
 # put rows with imputed steps back with the rest of the data
 act.imputed <- rbind.data.frame(nonmissrows, imputedrows)
 act.imputed <- act.imputed[order(act.imputed$date, act.imputed$interval), ]
+
 ```
 
 
 
 Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
 ```{r steps per day after imputation}
-
 # sum steps at the daily level
 steps.daily <- aggregate(steps ~ date, data=act.imputed, sum)
 
@@ -110,7 +110,6 @@ steps.daily <- aggregate(steps ~ date, data=act.imputed, sum)
 with(steps.daily, hist(steps, main="Steps per Day Distribution", 
                        xlab="steps per day", ylab="number of days", 
                        breaks=11, col="wheat"))
-
 # compute mean and median daily steps
 mean.steps.per.day <- mean(steps.daily$steps)
 median.steps.per.day <- median(steps.daily$steps)
@@ -118,14 +117,30 @@ median.steps.per.day <- median(steps.daily$steps)
 cat("Mean number of steps per day after imputation = ", mean.steps.per.day)
 cat("Median number of steps per day after imputation = ", median.steps.per.day)
 ```
-The mean and median steps per day is virtually unchanged after imputation.  However, the histogram is more peaked, though it retains a similar shape.  Therefore, disproportionate number of imputed steps landed near the center of the distribution. 
+The mean and median steps per day are virtually unchanged after imputation.  However, the histogram is more peaked, though it retains a similar shape.  Therefore, a disproportionate number of imputed steps landed near the center of the distribution. 
 
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
 For this part the weekdays() function may be of some help here. Use the dataset with the filled-in missing values for this part.
 
-1. Create a new factor variable in the dataset with two levels - "weekday" and "weekend" indicating whether a given date is a weekday or weekend day.
+- Create a new factor variable in the dataset with two levels - "weekday" and "weekend" indicating whether a given date is a weekday or weekend day.
+```{r weekday factor}
+# create a Weekend, Weekday factor
+act.imputed$weekday <- ifelse(weekdays(act.imputed$date) %in% c("Saturday", "Sunday"),0,1)
+act.imputed$weekday <- factor(act.imputed$weekday, labels=c("Weekend", "Weekday"))
+```
 
-1. Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). 
+
+
+- Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). 
+```{r intra-day steps for weekdays and weekends}
+# average steps by interval across all dates
+act.imputed.5min <- aggregate(steps ~ weekday+interval, data=act.imputed, FUN=mean)
+
+# plot average steps per time interval, separating weekdays and weekends
+library("lattice")
+
+xyplot(steps ~ interval | weekday, data=act.imputed.5min, type="l", xlab="Interval", ylab="Number of Steps", layout=c(1,2))
+```
 
