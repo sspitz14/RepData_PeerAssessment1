@@ -82,14 +82,13 @@ cat("Median number of steps per day = ", median.steps.per.day)
 
 ## What is the average daily activity pattern?
 
-1. Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
-1. Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+- Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
 
-- This time, you will have to compute the average steps in each 5-minute interval (interval column in the data frame)
-- Each date will have 288 5-minute intervals.  You will need to compute the average number of steps (across all days) for each of these intervals.
-- The resulting data frame will have 288 rows with each row representing one 5-minute interval.
-- Plot the data with the interval on the x-axis and the average steps of each interval on the y-axis.
-- See the reference plot on the PA1 instructions.
+  - This time, you will have to compute the average steps in each 5-minute interval (interval column in the data frame)
+  - Each date will have 288 5-minute intervals.  You will need to compute the average number of steps (across all days) for each of these intervals.
+  - The resulting data frame will have 288 rows with each row representing one 5-minute interval.
+  - Plot the data with the interval on the x-axis and the average steps of each interval on the y-axis.
+
 
 ```r
 # roll up the data to the 5-minute interval level, averaging steps across
@@ -102,6 +101,20 @@ with(steps.5min, plot(interval, steps, type = "l", col = "blue", lwd = 2, main =
 ```
 
 ![plot of chunk 5 min time series](figure/5_min_time_series.png) 
+
+
+- Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+
+```r
+cat("The most active 5-minute interval is", steps.5min[which(steps.5min$steps == 
+    max(steps.5min$steps)), "interval"])
+```
+
+```
+## The most active 5-minute interval is 835
+```
+
+
 
 
 
@@ -155,8 +168,8 @@ Make a histogram of the total number of steps taken each day and Calculate and r
 steps.daily <- aggregate(steps ~ date, data = act.imputed, sum)
 
 # histogram
-with(steps.daily, hist(steps, main = "Steps per Day Distribution", xlab = "steps per day", 
-    ylab = "number of days", breaks = 11, col = "wheat"))
+with(steps.daily, hist(steps, main = "Steps per Day Distribution, After Imputation", 
+    xlab = "steps per day", ylab = "number of days", breaks = 11, col = "wheat"))
 ```
 
 ![plot of chunk steps per day after imputation](figure/steps_per_day_after_imputation.png) 
@@ -203,7 +216,7 @@ act.imputed$weekday <- factor(act.imputed$weekday, labels = c("Weekend", "Weekda
 - Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). 
 
 ```r
-# aggregate by interval across all dates
+# average steps by interval across all dates
 act.imputed.5min <- aggregate(steps ~ weekday + interval, data = act.imputed, 
     FUN = mean)
 
